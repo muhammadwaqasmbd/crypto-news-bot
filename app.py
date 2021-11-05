@@ -6,6 +6,7 @@ from flask_socketio import SocketIO, emit
 from threading import Thread
 from gevent import monkey as curious_george
 import redis
+import datetime as dt
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0, charset="utf-8", decode_responses=True)
 async_mode = "gevent"
@@ -29,6 +30,7 @@ def process_thread():
     thread.start()
 
 def process_articles():
+    current_time =  dt.datetime.today()
     with app.test_request_context('/'):
         data = get_articles()
         articles_data = data["data"]
@@ -38,6 +40,7 @@ def process_articles():
             articles.append(article_dict)
             r.set(article["attributes"]["publishOn"], article["attributes"]["title"])
         emit('get_artciles',{'articles': articles},broadcast=True,namespace='/start')
+        print("Total Time in seconds :", (current_time- dt.datetime.today()).total_seconds())
 
 def get_articles():
     url = f'https://seekingalpha.com/api/v3/articles?cacheBuster=2021-10-20&filter[category]=stock-ideas::long-ideas&filter[since]=0&filter[until]=0&include=author,primaryTickers,secondaryTickers&isMounting=true&page[size]=100&page[number]=1'
