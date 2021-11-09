@@ -18,15 +18,14 @@
             socket.on('get_huobi', function(msg, cb) {
                 let p = "";
                 $('#huobi_articles').html("");
-                $("#huobi_updated").html("");
-                $("#huobi_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
-                    let key = new Date(1000 * parseInt(Object.keys(data)[0])).toLocaleString();
+                    let key = Object.keys(data)[0];
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#huobi_articles').append('<tr> '+
-                            '<td>'+key+' </td>' +
                             '<td>'+values[0].title+' </td>'+
+                            '<td>'+key+' </td>' +
+                            '<td>'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -36,16 +35,14 @@
             socket.on('get_okex', function(msg, cb) {
                 let p = "";
                 $('#okex_articles').html("");
-                $("#okex_updated").html("");
-                $("#okex_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
-                    let key = new Date(Object.keys(data)[0]).toLocaleString();
+                    let key = Object.keys(data)[0];
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#okex_articles').append('<tr> '+
-                            '<td>'+key+' </td>' +
                             '<td>'+values[0].title+' </td>' +
-                            '<td>'+values[1].source+' </td>'+
+                            '<td>'+key+' </td>' +
+                            '<td>'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -55,16 +52,14 @@
             socket.on('get_binance', function(msg, cb) {
                 let p = "";
                 $('#binance_articles').html("");
-                $("#binance_updated").html("");
-                $("#binance_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
                     let key = Object.keys(data)[0];
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#binance_articles').append('<tr> '+
-                            '<td>'+values[2].publishDate+' </td>'+
                             '<td>'+values[0].title+' </td>' +
-                            '<td>'+values[1].catalogName+' </td>' +
+                            '<td>'+values[2].publishDate+' </td>'+
+                            '<td>'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -74,18 +69,15 @@
             socket.on('get_medium', function(msg, cb) {
                 let p = "";
                 $('#medium_articles').html("");
-                $("#medium_updated").html("");
-                $("#medium_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
                     let key = Object.keys(data)[0];
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#medium_articles').append('<tr> '+
                             '<td>'+values[0].title+' </td>' +
-                            '<td>'+values[1].author+' </td>'+
-                            '<td>'+values[3].likes+' </td>'+
-                            '<td>'+values[3].comments+' </td>'+
-                            '</tr>')
+                            '<td> </td>'+
+                            '<td>'+values[1].time2+' </td>'+
+                        '</tr>');
                     } 
                 });
                 if (cb)
@@ -93,59 +85,74 @@
             });
         });
     </script>
+    <style>
+        .table-wrapper {
+            max-height: 400px;
+            overflow: auto;
+            display:inline-block;
+            }
+    </style>
 </head>
 <body>
-    <div class="row">
-        <div class="col-sm-6">
-            <h2>Huobi</h2>
-            <h4 id="huobi_updated"></h4>
-            <table class="table table-striped">
-                <thead>
-                    <th scope="col">Time</th>
-                    <th scope="col">Title</th>
-                </thead>
-                <tbody id="huobi_articles"></tbody>
-            </table>
+    <h3 class="text-center">Crypto BOT</h3>
+
+    <div class="row d-flex justify-content-center align-items-center text-center">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-4 table-wrapper">
+            <h3>Huobi</h3>
+            <hr/>
+                <table class="table align-self-center">
+                    <thead>
+                        <th scope="col">Title</th>
+                        <th scope="col">Timestamp 1</th>
+                        <th scope="col">Timestamp 2</th>
+                    </thead>
+                    <tbody id="huobi_articles"></tbody>
+                </table>
         </div>
-        <div class="col-sm-6">
-            <h2>Okex</h2>
-            <h4 id="okex_updated"></h4>
-            <table class="table table-striped">
-                <thead>
-                    <th scope="col">Time</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Source</th>
-                </thead>
-                <tbody id="okex_articles"></tbody>
-            </table>
+        <div class="col-sm-4 table-wrapper">
+            <h3>Okex</h3>
+            <hr/>
+                    <table class="table align-self-center">
+                        <thead>
+                            <th scope="col">Title</th>
+                            <th scope="col">Timestamp 1</th>
+                            <th scope="col">Timestamp 2</th>
+                        </thead>
+                        <tbody id="okex_articles"></tbody>
+                    </table>
         </div>
+        <div class="col-sm-2"></div>
     </div>
-    <div class="row">
-        <div class="col-sm-6">
-            <h2>Binance</h2>
-            <h4 id="binance_updated"></h4>
-            <table class="table table-striped">
-                <thead>
-                    <th scope="col">Time</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Catalog</th>
-                </thead>
-                <tbody id="binance_articles"></tbody>
-            </table>
+    <hr/>
+    <div class="row d-flex justify-content-center align-items-center text-center">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-4 table-wrapper">
+            <h3>Binance</h3>
+            <hr/>
+                <table class="table align-self-center">
+                    <thead>
+                        <th scope="col">Title</th>
+                        <th scope="col">Timestamp 1</th>
+                        <th scope="col">Timestamp 2</th>
+                    </thead>
+                    <tbody id="binance_articles"></tbody>
+                </table>
         </div>
-        <div class="col-sm-6">
-            <h2>Medium</h2>
-            <h4 id="medium_updated"></h4>
-            <table class="table table-striped">
-                <thead>
-                    <th scope="col">Title</th>
-                    <th scope="col">Author</th>
-                    <th scope="col">Likes</th>
-                    <th scope="col">Comments</th>
-                </thead>
-                <tbody id="medium_articles"></tbody>
-            </table>
+        <div class="col-sm-4 table-wrapper">
+            <h3>Medium</h3>
+            <hr/>
+                    <table class="table align-self-center">
+                        <thead>
+                            <th scope="col">Title</th>
+                            <th scope="col">Timestamp 1</th>
+                            <th scope="col">Timestamp 2</th>
+                        </thead>
+                        <tbody id="medium_articles"></tbody>
+                    </table>
         </div>
+        <div class="col-sm-2"></div>
     </div>
+        
 </body>
 </html>

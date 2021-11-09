@@ -33,7 +33,7 @@ def start_process(message):
     rt_huobi = RepeatedTimer(1, process_huobi_thread) 
     rt_okex = RepeatedTimer(1, process_okex_thread)
     rt_binance = RepeatedTimer(1, process_binance_thread) 
-    rt_medium = RepeatedTimer(1, process_medium_thread) 
+    rt_medium = RepeatedTimer(10, process_medium_thread) 
 
 def process_huobi_thread():
     thread = Thread(target=process_huobi_articles)
@@ -61,8 +61,8 @@ def process_huobi_articles():
         data = get_records("https://www.huobi.com/support/public/getList/v2?page=1&limit=20&oneLevelId=360000031902&twoLevelId=360000039481&language=en-us",True)
         articles_data = data["data"]["list"]
         for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]}],cls=SetEncoder)
-            r1.set(article["showTime"], json_data)
+            json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
+            r1.set(dt.datetime.fromtimestamp(article["showTime"]/ 1e3).strftime("%Y-%m-%d %H:%M:%S"), json_data)
         articles = get_all_records(r1)
         emit('get_huobi',{'articles': articles},broadcast=True,namespace='/start')
         print("Total Time in seconds huobi :", (current_time- dt.datetime.today()).total_seconds())
@@ -73,8 +73,9 @@ def process_okex_articles():
         data = get_records("https://www.okex.com/support/hc/api/internal/recent_activities?locale=en-us&page=1&per_page=20&locale=en-us", False)
         articles_data = data["activities"]
         for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]}, {"source":article["url"]}],cls=SetEncoder)
-            r2.set(article["timestamp"], json_data)
+            json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
+            published_date = article["timestamp"][:-1]
+            r2.set(dt.datetime.strptime(published_date,"%Y-%m-%dT%H:%M:%S").strftime('%Y-%m-%d %H:%M:%S'), json_data)
         articles = get_all_records(r2)
         emit('get_okex',{'articles': articles},broadcast=True,namespace='/start')
         print("Total Time in seconds okex :", (current_time- dt.datetime.today()).total_seconds())
@@ -85,7 +86,7 @@ def process_binance_articles():
         data = get_records("https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=49&pageNo=1&pageSize=20", False)
         articles_data = data["data"]["articles"]
         for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]}, {"catalogName":article["catalogName"]},{"publishDate":article["publishDate"]}],cls=SetEncoder)
+            json_data = json.dumps([{"title":article["title"]} ,{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, {"publishDate":article["publishDate"]}],cls=SetEncoder)
             r3.set(article["code"], json_data)
         articles = get_all_records(r3)
         emit('get_binance',{'articles': articles},broadcast=True,namespace='/start')
@@ -100,28 +101,8 @@ def process_medium_articles():
             if title is not None:
                 title = title.contents[0]
             else:
-                title = "None"
-            author = article.find("em", class_="jo")
-            if author is not None:
-                author = author.contents[0]
-            else:
-                author = "None"
-            image = article.find("img", class_="v gx ir")
-            if image is not None:
-                image = image['src']
-            else:
-                image = "None"
-            likes = article.find("button", class_="eh ei bz ca cb cc cd ce cf bl ej ek cg el em")
-            if likes is not None:
-                likes = likes.contents[0]
-            else:
-                likes = "None"
-            comments = article.find("span", class_="lj li")
-            if comments is not None:
-                comments = comments.contents[0]
-            else:
-                comments = "None"
-            json_data = json.dumps([{"title":title}, {"author":author},{"image":image},{"likes":likes},{"comments":comments}],cls=SetEncoder)
+                continue
+            json_data = json.dumps([{"title":title}, {"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
             r4.set(title, json_data)
         articles = get_all_records(r4)
         emit('get_medium',{'articles': articles},broadcast=True,namespace='/start')
@@ -152,6 +133,7 @@ def get_records(url,huobi):
 
 def get_medium_records(url):
     response = requests.get(url, allow_redirects=True)
+    print(response)
     page = response.content
     soup = BeautifulSoup(page, 'html.parser')
     articles = soup.find_all("div", class_="ap aq ar as at fz av v")
