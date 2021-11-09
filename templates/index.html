@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>FlaskApp</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"></script>
     <script type="text/javascript" charset="utf-8">
@@ -12,17 +15,79 @@
                 console.log("Connected to socket")
                 socket.emit('start_process', 'start');
             });
-            socket.on('get_artciles', function(msg, cb) {
-                var p = "";
-                $('#articles').html("");
-                $("#updated").html("");
-                $("#updated").html('<h3>Updated at: '+new Date()+'</h3>');
-                msg.articles.forEach((article,i) => {
-                    console.log(article)
-                    p += '<p id="p' + (++i) + '">'+Object.keys(article)[0]+" ========= "+Object.values(article)[0]+'</p>';    
-
+            socket.on('get_huobi', function(msg, cb) {
+                let p = "";
+                $('#huobi_articles').html("");
+                $("#huobi_updated").html("");
+                $("#huobi_updated").html('<h3>Updated at: '+new Date()+'</h3>');
+                msg.articles.forEach((data) => {
+                    let key = Object.keys(data)[0];
+                    let values = JSON.parse(Object.values(data)[0])
+                    if(typeof key !== "undefined"){
+                        $('#huobi_articles').append('<tr> '+
+                            '<td>'+key+' </td>' +
+                            '<td>'+values[0].title+' </td>'+
+                            '</tr>')
+                    } 
                 });
-                $('#articles').html(p);
+                if (cb)
+                    cb();
+            });
+            socket.on('get_okex', function(msg, cb) {
+                let p = "";
+                $('#okex_articles').html("");
+                $("#okex_updated").html("");
+                $("#okex_updated").html('<h3>Updated at: '+new Date()+'</h3>');
+                msg.articles.forEach((data) => {
+                    let key = Object.keys(data)[0];
+                    let values = JSON.parse(Object.values(data)[0])
+                    if(typeof key !== "undefined"){
+                        $('#okex_articles').append('<tr> '+
+                            '<td>'+key+' </td>' +
+                            '<td>'+values[0].title+' </td>' +
+                            '<td>'+values[1].source+' </td>'+
+                            '</tr>')
+                    } 
+                });
+                if (cb)
+                    cb();
+            });
+            socket.on('get_binance', function(msg, cb) {
+                let p = "";
+                $('#binance_articles').html("");
+                $("#binance_updated").html("");
+                $("#binance_updated").html('<h3>Updated at: '+new Date()+'</h3>');
+                msg.articles.forEach((data) => {
+                    let key = Object.keys(data)[0];
+                    let values = JSON.parse(Object.values(data)[0])
+                    if(typeof key !== "undefined"){
+                        $('#binance_articles').append('<tr> '+
+                            '<td>'+values[2].publishDate+' </td>'+
+                            '<td>'+values[0].title+' </td>' +
+                            '<td>'+values[1].catalogName+' </td>' +
+                            '</tr>')
+                    } 
+                });
+                if (cb)
+                    cb();
+            });
+            socket.on('get_medium', function(msg, cb) {
+                let p = "";
+                $('#medium_articles').html("");
+                $("#medium_updated").html("");
+                $("#medium_updated").html('<h3>Updated at: '+new Date()+'</h3>');
+                msg.articles.forEach((data) => {
+                    let key = Object.keys(data)[0];
+                    let values = JSON.parse(Object.values(data)[0])
+                    if(typeof key !== "undefined"){
+                        $('#medium_articles').append('<tr> '+
+                            '<td>'+values[0].title+' </td>' +
+                            '<td>'+values[1].author+' </td>'+
+                            '<td>'+values[3].likes+' </td>'+
+                            '<td>'+values[3].comments+' </td>'+
+                            '</tr>')
+                    } 
+                });
                 if (cb)
                     cb();
             });
@@ -30,8 +95,57 @@
     </script>
 </head>
 <body>
-    <h1>BOT</h1>
-    <div id="updated"></div>
-    <div id="articles"> </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <h2>Huobi</h2>
+            <h4 id="huobi_updated"></h4>
+            <table class="table table-striped">
+                <thead>
+                    <th scope="col">Time</th>
+                    <th scope="col">Title</th>
+                </thead>
+                <tbody id="huobi_articles"></tbody>
+            </table>
+        </div>
+        <div class="col-sm-6">
+            <h2>Okex</h2>
+            <h4 id="okex_updated"></h4>
+            <table class="table table-striped">
+                <thead>
+                    <th scope="col">Time</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Source</th>
+                </thead>
+                <tbody id="okex_articles"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <h2>Binance</h2>
+            <h4 id="binance_updated"></h4>
+            <table class="table table-striped">
+                <thead>
+                    <th scope="col">Time</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Catalog</th>
+                </thead>
+                <tbody id="binance_articles"></tbody>
+            </table>
+        </div>
+        <div class="col-sm-6">
+            <h2>Medium</h2>
+            <h4 id="medium_updated"></h4>
+            <table class="table table-striped">
+                <thead>
+                    <th scope="col">Title</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Likes</th>
+                    <th scope="col">Comments</th>
+                </thead>
+                <tbody id="medium_articles"></tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
