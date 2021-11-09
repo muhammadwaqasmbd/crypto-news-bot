@@ -178,4 +178,4 @@ def get_all_records(r):
     return articles
 
 if __name__ == "__main__":
-  socket_.run(app, port=3000, debug=True)
+  socket_.run(app,host='0.0.0.0', port=3000, debug=True)
