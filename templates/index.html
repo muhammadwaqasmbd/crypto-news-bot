@@ -21,7 +21,7 @@
                 $("#huobi_updated").html("");
                 $("#huobi_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
-                    let key = Object.keys(data)[0];
+                    let key = new Date(1000 * parseInt(Object.keys(data)[0])).toLocaleString();
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#huobi_articles').append('<tr> '+
@@ -39,7 +39,7 @@
                 $("#okex_updated").html("");
                 $("#okex_updated").html('<h3>Updated at: '+new Date()+'</h3>');
                 msg.articles.forEach((data) => {
-                    let key = Object.keys(data)[0];
+                    let key = new Date(Object.keys(data)[0]).toLocaleString();
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#okex_articles').append('<tr> '+
