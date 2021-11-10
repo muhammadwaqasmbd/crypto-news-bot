@@ -11,6 +11,8 @@ from rejson import Client, Path
 from SetEncoder import SetEncoder
 from urllib.request import Request, urlopen 
 from bs4 import BeautifulSoup
+import time
+from mechanize import Browser
 
 r1 = redis.StrictRedis(host='localhost', port=6379, db=1, charset="utf-8", decode_responses=True)
 r2 = redis.StrictRedis(host='localhost', port=6379, db=2, charset="utf-8", decode_responses=True)
@@ -33,7 +35,7 @@ def start_process(message):
     rt_huobi = RepeatedTimer(1, process_huobi_thread) 
     rt_okex = RepeatedTimer(1, process_okex_thread)
     rt_binance = RepeatedTimer(1, process_binance_thread) 
-    rt_medium = RepeatedTimer(10, process_medium_thread) 
+    rt_medium = RepeatedTimer(60, process_medium_thread) 
 
 def process_huobi_thread():
     thread = Thread(target=process_huobi_articles)
@@ -97,19 +99,32 @@ def process_medium_articles():
     with app.test_request_context('/'):
         data = get_medium_records("https://medium.com/@coinbaseblog")
         for article in data:
-            title = article.find("a", class_="eh bw")
-            if title is not None:
-                title = title.contents[0]
-            else:
+            title = article.find("a", class_="eh bw", href=True)
+            if title is None:
                 continue
+            else:
+                href = title["href"].split("?")[0]
+                title = title.contents[0]
+                publish_date = get_medium_article(href)
             json_data = json.dumps([{"title":title}, {"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
-            r4.set(title, json_data)
+            r4.set(publish_date, json_data)
         articles = get_all_records(r4)
         emit('get_medium',{'articles': articles},broadcast=True,namespace='/start')
         print("Total Time in seconds medium :", (current_time- dt.datetime.today()).total_seconds())
 
 def get_records(url,huobi):
     url = f'{url}'
+    if huobi:
+        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        data = urlopen(req)
+        json_data = json.loads(data.read().decode(data.info().get_param('charset') or 'utf-8'))
+        return json_data
+    else:
+        headers = get_headers()
+        data = requests.get(url, headers=headers,auth=('[username]','[password]'), verify=False).json()
+        return data
+
+def get_headers():
     headers = {
         'accept': '*/*',
         'accept-encoding': 'gzip,deflate,br',
@@ -122,22 +137,31 @@ def get_records(url,huobi):
         'sec-fetch-site': 'same-origin',
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0',
     }
-    if huobi:
-        req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        data = urlopen(req)
-        json_data = json.loads(data.read().decode(data.info().get_param('charset') or 'utf-8'))
-        return json_data
-    else:
-        data = requests.get(url, headers=headers,auth=('[username]','[password]'), verify=False).json()
-        return data
+    return headers
 
 def get_medium_records(url):
-    response = requests.get(url, allow_redirects=True)
-    print(response)
-    page = response.content
-    soup = BeautifulSoup(page, 'html.parser')
-    articles = soup.find_all("div", class_="ap aq ar as at fz av v")
+    time.sleep(1)
+    print("in main medium")
+    b = Browser()
+    b.set_handle_robots(False)
+    b.addheaders = [('Referer', 'https://www.medium.com'), ('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+    b.open(url)
+    soup = BeautifulSoup(b.response().read(), 'html.parser')
+    articles = soup.find_all("div", class_="gf gg gh ah gi ku gk kv gm kw go kx gq ky")
     return articles
+
+def get_medium_article(url):
+    time.sleep(1)
+    print("in sub medium")
+    b = Browser()
+    b.set_handle_robots(False)
+    b.addheaders = [('Referer', 'https://www.medium.com'), ('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+    b.open(url)
+    soup = BeautifulSoup(b.response().read(), "html.parser")
+    publish_date = soup.find("meta", property="article:published_time")["content"]
+    publish_date = publish_date[:-5]
+    formated_date = dt.datetime.strptime(publish_date,"%Y-%m-%dT%H:%M:%S").strftime('%Y-%m-%d %H:%M:%S')
+    return formated_date
 
 def get_all_records(r):
     articles=[]
