@@ -34,8 +34,32 @@ def scrape():
 def start_process(message):
     rt_huobi = RepeatedTimer(1, process_huobi_thread) 
     rt_okex = RepeatedTimer(1, process_okex_thread)
-    rt_binance = RepeatedTimer(1, process_binance_thread) 
+    rt_binance = RepeatedTimer(3, process_binance_thread) 
     rt_medium = RepeatedTimer(60, process_medium_thread) 
+    rt_huobi_redis = RepeatedTimer(1, process_huobi_redis_thread) 
+    rt_okex_redis = RepeatedTimer(1, process_okex_redis_thread)
+    rt_binance_redis = RepeatedTimer(1, process_binance_redis_thread) 
+    rt_medium_redis = RepeatedTimer(1, process_medium_redis_thread)
+
+def process_huobi_redis_thread():
+    thread = Thread(target=get_all_records,args=[r1,"get_huobi"])
+    thread.daemon = True
+    thread.start()
+
+def process_okex_redis_thread():
+    thread = Thread(target=get_all_records,args=[r1,"get_okex"])
+    thread.daemon = True
+    thread.start()
+
+def process_binance_redis_thread():
+    thread = Thread(target=get_all_records,args=[r1,"get_binance"])
+    thread.daemon = True
+    thread.start()
+
+def process_medium_redis_thread():
+    thread = Thread(target=get_all_records,args=[r1,"get_medium"])
+    thread.daemon = True
+    thread.start()
 
 def process_huobi_thread():
     thread = Thread(target=process_huobi_articles)
@@ -52,66 +76,83 @@ def process_binance_thread():
     thread.daemon = True
     thread.start()
 
+def process_binance_article_thread(code,json_data):
+    thread = Thread(target=process_binance_article,args=[code,json_data])
+    thread.daemon = True
+    thread.start()
+
 def process_medium_thread():
     thread = Thread(target=process_medium_articles)
     thread.daemon = True
     thread.start()
 
+def redis_save_thread(r,publish_date,json_data):
+    thread = Thread(target=redis_save_date,args=[r,publish_date,json_data])
+    thread.daemon = True
+    thread.start()
+
+def redis_get_data_thread(r,article_type):
+    thread = Thread(target=get_all_records,args=[r,article_type])
+    thread.daemon = True
+    thread.start()
+
 def process_huobi_articles():
-    current_time =  dt.datetime.today()
-    with app.test_request_context('/'):
-        data = get_records("https://www.huobi.com/support/public/getList/v2?page=1&limit=20&oneLevelId=360000031902&twoLevelId=360000039481&language=en-us",True)
-        articles_data = data["data"]["list"]
-        for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
-            r1.set(dt.datetime.fromtimestamp(article["showTime"]/ 1e3).strftime("%Y-%m-%d %H:%M:%S"), json_data)
-        articles = get_all_records(r1)
-        emit('get_huobi',{'articles': articles},broadcast=True,namespace='/start')
-        print("Total Time in seconds huobi :", (current_time- dt.datetime.today()).total_seconds())
+    current_time =  dt.datetime.now()
+    data = get_records("https://www.huobi.com/support/public/getList/v2?page=1&limit=20&oneLevelId=360000031902&twoLevelId=360000039481&language=en-us",True)
+    articles_data = data["data"]["list"]
+    for article in articles_data:
+        json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
+        publish_date = get_datestring_from_integer(article["showTime"])
+        redis_save_thread(r1,publish_date, json_data)
+    #redis_get_data_thread(r1,"get_huobi")
+    print("Total Time in seconds huobi :", (current_time- dt.datetime.now()).total_seconds())
+
+def redis_save_date(r,publish_date,json_data):
+    r.set(publish_date, json_data)
 
 def process_okex_articles():
-    current_time =  dt.datetime.today()
-    with app.test_request_context('/'):
-        data = get_records("https://www.okex.com/support/hc/api/internal/recent_activities?locale=en-us&page=1&per_page=20&locale=en-us", False)
-        articles_data = data["activities"]
-        for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
-            published_date = article["timestamp"][:-1]
-            r2.set(dt.datetime.strptime(published_date,"%Y-%m-%dT%H:%M:%S").strftime('%Y-%m-%d %H:%M:%S'), json_data)
-        articles = get_all_records(r2)
-        emit('get_okex',{'articles': articles},broadcast=True,namespace='/start')
-        print("Total Time in seconds okex :", (current_time- dt.datetime.today()).total_seconds())
+    current_time =  dt.datetime.now()
+    data = get_records("https://www.okex.com/support/hc/api/internal/recent_activities?locale=en-us&page=1&per_page=20&locale=en-us", False)
+    articles_data = data["activities"]
+    for article in articles_data:
+        json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
+        published_date = article["timestamp"][:-1]
+        publish_date = get_formated_datestring(published_date)
+        redis_save_thread(r2,publish_date, json_data)
+    #redis_get_data_thread(r1,"get_okex")
+    print("Total Time in seconds okex :", (current_time- dt.datetime.now()).total_seconds())
 
 def process_binance_articles():
-    current_time =  dt.datetime.today()
-    with app.test_request_context('/'):
-        data = get_records("https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=49&pageNo=1&pageSize=20", False)
-        articles_data = data["data"]["articles"]
-        for article in articles_data:
-            json_data = json.dumps([{"title":article["title"]} ,{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, {"publishDate":article["publishDate"]}],cls=SetEncoder)
-            r3.set(article["code"], json_data)
-        articles = get_all_records(r3)
-        emit('get_binance',{'articles': articles},broadcast=True,namespace='/start')
-        print("Total Time in seconds binance :", (current_time- dt.datetime.today()).total_seconds())
+    data = get_records("https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=49&pageNo=1&pageSize=20", False)
+    articles_data = data["data"]["articles"]
+    for article in articles_data:
+        json_data = json.dumps([{"title":article["title"]} ,{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, {"publishDate":article["publishDate"]}],cls=SetEncoder)
+        current_time =  dt.datetime.now()
+        process_binance_article_thread(article["code"],json_data)
+        #redis_get_data_thread(r3,"get_binance")
+        print("Total Time in seconds binance :", (current_time- dt.datetime.now()).total_seconds())
+
+def process_binance_article(code,json_data):
+    record_data = get_records("https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode="+code, False)
+    publish_date = get_datestring_from_integer(record_data["data"]["publishDate"])
+    redis_save_thread(r3,publish_date, json_data)
 
 def process_medium_articles():
-    current_time =  dt.datetime.today()
-    with app.test_request_context('/'):
-        data = get_medium_records("https://medium.com/@coinbaseblog")
-        for article in data:
-            title = article.find("a", class_="eh bw", href=True)
-            if title is None:
-                continue
-            else:
-                href = title["href"].split("?")[0]
-                title = title.contents[0]
-                time.sleep(2)
-                publish_date = get_medium_article(href)
+    current_time =  dt.datetime.now()
+    data = get_medium_records("https://medium.com/@coinbaseblog")
+    for article in data:
+        title = article.find("a", class_="eh bw", href=True)
+        if title is None:
+            continue
+        else:
+            href = title["href"].split("?")[0]
+            title = title.contents[0]
+            time.sleep(2)
+            publish_date = get_medium_article(href)
             json_data = json.dumps([{"title":title}, {"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
-            r4.set(publish_date, json_data)
-        articles = get_all_records(r4)
-        emit('get_medium',{'articles': articles},broadcast=True,namespace='/start')
-        print("Total Time in seconds medium :", (current_time- dt.datetime.today()).total_seconds())
+            redis_save_thread(r4,publish_date, json_data)
+    #redis_get_data_thread(r4,"get_medium")
+    print("Total Time in seconds medium :", (current_time- dt.datetime.now()).total_seconds())
 
 def get_records(url,huobi):
     url = f'{url}'
@@ -141,7 +182,6 @@ def get_headers():
     return headers
 
 def get_medium_records(url):
-    print("in main medium")
     b = Browser()
     b.set_handle_robots(False)
     b.addheaders = [('Referer', 'https://www.medium.com'), ('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
@@ -151,7 +191,6 @@ def get_medium_records(url):
     return articles
 
 def get_medium_article(url):
-    print("in sub medium")
     b = Browser()
     b.set_handle_robots(False)
     b.addheaders = [('Referer', 'https://www.medium.com'), ('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
@@ -159,28 +198,26 @@ def get_medium_article(url):
     soup = BeautifulSoup(b.response().read(), "html.parser")
     publish_date = soup.find("meta", property="article:published_time")["content"]
     publish_date = publish_date[:-5]
-    formated_date = dt.datetime.strptime(publish_date,"%Y-%m-%dT%H:%M:%S").strftime('%Y-%m-%d %H:%M:%S')
+    formated_date = get_formated_datestring(publish_date)
     return formated_date
 
-def get_all_records(r):
-    articles=[]
-    keys = r.keys('*')
-    for key in keys:
-        vals = None
-        type = r.type(key)
-        if type == "string":
+def get_all_records(r,article_type):
+    with app.test_request_context('/'):
+        articles=[]
+        keys = r.keys('*')
+        for key in keys:
             vals = r.get(key)
-        if type == "hash":
-            vals = r.hgetall(key)
-        if type == "zset":
-            vals = r.zrange(key, 0, -1)
-        if type == "list":
-            vals = r.lrange(key, 0, -1)
-        if type == "set":
-            vals = r.smembers(key)
-        article_dict = {key:vals}
-        articles.append(article_dict)
-    return articles
+            if vals is not None:
+                article_dict = {key:vals}
+                articles.append(article_dict)
+        if len(articles) > 0:
+            emit(article_type,{'articles': articles},broadcast=True,namespace='/start')
+
+def get_datestring_from_integer(time):
+    return dt.datetime.fromtimestamp(time/ 1e3).strftime("%Y-%m-%d %H:%M:%S")
+
+def get_formated_datestring(time):
+    return dt.datetime.strptime(time,"%Y-%m-%dT%H:%M:%S").strftime('%Y-%m-%d %H:%M:%S')
 
 if __name__ == "__main__":
   socket_.run(app,host='0.0.0.0', port=3000, debug=True)
