@@ -105,6 +105,7 @@ def process_medium_articles():
             else:
                 href = title["href"].split("?")[0]
                 title = title.contents[0]
+                time.sleep(2)
                 publish_date = get_medium_article(href)
             json_data = json.dumps([{"title":title}, {"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
             r4.set(publish_date, json_data)
@@ -140,7 +141,6 @@ def get_headers():
     return headers
 
 def get_medium_records(url):
-    time.sleep(1)
     print("in main medium")
     b = Browser()
     b.set_handle_robots(False)
@@ -151,7 +151,6 @@ def get_medium_records(url):
     return articles
 
 def get_medium_article(url):
-    time.sleep(1)
     print("in sub medium")
     b = Browser()
     b.set_handle_robots(False)

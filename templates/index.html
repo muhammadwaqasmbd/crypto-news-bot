@@ -23,9 +23,9 @@
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#huobi_articles').append('<tr> '+
-                            '<td>'+values[0].title+' </td>'+
-                            '<td>'+key+' </td>' +
-                            '<td>'+values[1].time2+' </td>'+
+                            '<td style="width:80%">'+values[0].title+' </td>'+
+                            '<td style="width:10%">'+key+' </td>' +
+                            '<td style="width:10%">'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -40,9 +40,9 @@
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#okex_articles').append('<tr> '+
-                            '<td>'+values[0].title+' </td>' +
-                            '<td>'+key+' </td>' +
-                            '<td>'+values[1].time2+' </td>'+
+                            '<td style="width:80%">'+values[0].title+' </td>' +
+                            '<td style="width:10%">'+key+' </td>' +
+                            '<td style="width:10%">'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -57,9 +57,9 @@
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#binance_articles').append('<tr> '+
-                            '<td>'+values[0].title+' </td>' +
-                            '<td>'+values[2].publishDate+' </td>'+
-                            '<td>'+values[1].time2+' </td>'+
+                            '<td style="width:80%">'+values[0].title+' </td>' +
+                            '<td style="width:10%">'+values[2].publishDate+' </td>'+
+                            '<td style="width:10%">'+values[1].time2+' </td>'+
                             '</tr>')
                     } 
                 });
@@ -74,9 +74,9 @@
                     let values = JSON.parse(Object.values(data)[0])
                     if(typeof key !== "undefined"){
                         $('#medium_articles').append('<tr> '+
-                            '<td>'+values[0].title+' </td>' +
-                            '<td>'+key+'</td>'+
-                            '<td>'+values[1].time2+' </td>'+
+                            '<td style="width:80%">'+values[0].title+' </td>' +
+                            '<td style="width:10%">'+key+'</td>'+
+                            '<td style="width:10%">'+values[1].time2+' </td>'+
                         '</tr>');
                     } 
                 });
@@ -87,7 +87,7 @@
     </script>
     <style>
         .table-wrapper {
-            max-height: 400px;
+            max-height: 300px;
             overflow: auto;
             display:inline-block;
             }
@@ -97,61 +97,57 @@
     <h3 class="text-center">Crypto BOT</h3>
 
     <div class="row d-flex justify-content-center align-items-center text-center">
-        <div class="col-sm-2"></div>
-        <div class="col-sm-4 table-wrapper">
+        <div class="col-sm-1"></div>
+        <div class="col-sm-5">
             <h3>Huobi</h3>
-            <hr/>
-                <table class="table align-self-center">
+                <table class="table align-self-center table-wrapper">
                     <thead>
-                        <th scope="col">Title</th>
-                        <th scope="col">Timestamp 1</th>
-                        <th scope="col">Timestamp 2</th>
+                        <th scope="col" style="width:80%">Title</th>
+                        <th scope="col" style="width:10%">Timestamp 1</th>
+                        <th scope="col" style="width:10%">Timestamp 2</th>
                     </thead>
                     <tbody id="huobi_articles"></tbody>
                 </table>
         </div>
-        <div class="col-sm-4 table-wrapper">
+        <div class="col-sm-5">
             <h3>Okex</h3>
-            <hr/>
-                    <table class="table align-self-center">
+                    <table class="table align-self-center table-wrapper">
                         <thead>
-                            <th scope="col">Title</th>
-                            <th scope="col">Timestamp 1</th>
-                            <th scope="col">Timestamp 2</th>
+                            <th scope="col" style="width:80%">Title</th>
+                            <th scope="col" style="width:10%">Timestamp 1</th>
+                            <th scope="col" style="width:10%">Timestamp 2</th>
                         </thead>
                         <tbody id="okex_articles"></tbody>
                     </table>
         </div>
-        <div class="col-sm-2"></div>
+        <div class="col-sm-1"></div>
     </div>
     <hr/>
     <div class="row d-flex justify-content-center align-items-center text-center">
-        <div class="col-sm-2"></div>
-        <div class="col-sm-4 table-wrapper">
+        <div class="col-sm-1"></div>
+        <div class="col-sm-5">
             <h3>Binance</h3>
-            <hr/>
-                <table class="table align-self-center">
+                <table class="table align-self-center table-wrapper">
                     <thead>
-                        <th scope="col">Title</th>
-                        <th scope="col">Timestamp 1</th>
-                        <th scope="col">Timestamp 2</th>
+                        <th scope="col" style="width:80%">Title</th>
+                        <th scope="col" style="width:10%">Timestamp 1</th>
+                        <th scope="col" style="width:10%">Timestamp 2</th>
                     </thead>
                     <tbody id="binance_articles"></tbody>
                 </table>
         </div>
-        <div class="col-sm-4 table-wrapper">
+        <div class="col-sm-5">
             <h3>Medium</h3>
-            <hr/>
-                    <table class="table align-self-center">
+                    <table class="table align-self-center table-wrapper">
                         <thead>
-                            <th scope="col">Title</th>
-                            <th scope="col">Timestamp 1</th>
-                            <th scope="col">Timestamp 2</th>
+                            <th scope="col" style="width:80%">Title</th>
+                            <th scope="col" style="width:10%">Timestamp 1</th>
+                            <th scope="col" style="width:10%">Timestamp 2</th>
                         </thead>
                         <tbody id="medium_articles"></tbody>
                     </table>
         </div>
-        <div class="col-sm-2"></div>
+        <div class="col-sm-1"></div>
     </div>
         
 </body>
