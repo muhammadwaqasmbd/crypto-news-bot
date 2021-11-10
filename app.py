@@ -25,6 +25,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socket_ = SocketIO(app,async_mode=async_mode)
 thread = None
+thread_h_redis = None
+thread_o_redis = None
+thread_b_redis = None
+thread_m_redis = None
+thread_h = None
+thread_o = None
+thread_b = None
+thread_m = None
+thread_redis_get= None
+thread_redis_save= None
+thread_b_a= None
 
 @app.route("/")
 def scrape():
@@ -42,59 +53,59 @@ def start_process(message):
     rt_medium_redis = RepeatedTimer(1, process_medium_redis_thread)
 
 def process_huobi_redis_thread():
-    thread = Thread(target=get_all_records,args=[r1,"get_huobi"])
-    thread.daemon = True
-    thread.start()
+    thread_h_redis = Thread(target=get_all_records,args=[r1,"get_huobi"])
+    thread_h_redis.daemon = True
+    thread_h_redis.start()
 
 def process_okex_redis_thread():
-    thread = Thread(target=get_all_records,args=[r2,"get_okex"])
-    thread.daemon = True
-    thread.start()
+    thread_o_redis = Thread(target=get_all_records,args=[r2,"get_okex"])
+    thread_o_redis.daemon = True
+    thread_o_redis.start()
 
 def process_binance_redis_thread():
-    thread = Thread(target=get_all_records,args=[r3,"get_binance"])
-    thread.daemon = True
-    thread.start()
+    thread_b_redis = Thread(target=get_all_records,args=[r3,"get_binance"])
+    thread_b_redis.daemon = True
+    thread_b_redis.start()
 
 def process_medium_redis_thread():
-    thread = Thread(target=get_all_records,args=[r4,"get_medium"])
-    thread.daemon = True
-    thread.start()
+    thread_m_redis = Thread(target=get_all_records,args=[r4,"get_medium"])
+    thread_m_redis.daemon = True
+    thread_m_redis.start()
 
 def process_huobi_thread():
-    thread = Thread(target=process_huobi_articles)
-    thread.daemon = True
-    thread.start()
+    thread_h = Thread(target=process_huobi_articles)
+    thread_h.daemon = True
+    thread_h.start()
 
 def process_okex_thread():
-    thread = Thread(target=process_okex_articles)
-    thread.daemon = True
-    thread.start()
+    thread_o = Thread(target=process_okex_articles)
+    thread_o.daemon = True
+    thread_o.start()
 
 def process_binance_thread():
-    thread = Thread(target=process_binance_articles)
-    thread.daemon = True
-    thread.start()
+    thread_b = Thread(target=process_binance_articles)
+    thread_b.daemon = True
+    thread_b.start()
 
 def process_binance_article_thread(code,json_data):
-    thread = Thread(target=process_binance_article,args=[code,json_data])
-    thread.daemon = True
-    thread.start()
+    thread_b_a = Thread(target=process_binance_article,args=[code,json_data])
+    thread_b_a.daemon = True
+    thread_b_a.start()
 
 def process_medium_thread():
-    thread = Thread(target=process_medium_articles)
-    thread.daemon = True
-    thread.start()
+    thread_m = Thread(target=process_medium_articles)
+    thread_m.daemon = True
+    thread_m.start()
 
 def redis_save_thread(r,publish_date,json_data):
-    thread = Thread(target=redis_save_date,args=[r,publish_date,json_data])
-    thread.daemon = True
-    thread.start()
+    thread_redis_save = Thread(target=redis_save_date,args=[r,publish_date,json_data])
+    thread_redis_save.daemon = True
+    thread_redis_save.start()
 
 def redis_get_data_thread(r,article_type):
-    thread = Thread(target=get_all_records,args=[r,article_type])
-    thread.daemon = True
-    thread.start()
+    thread_redis_get = Thread(target=get_all_records,args=[r,article_type])
+    thread_redis_get.daemon = True
+    thread_redis_get.start()
 
 def process_huobi_articles():
     current_time =  dt.datetime.now()
