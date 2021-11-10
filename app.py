@@ -47,17 +47,17 @@ def process_huobi_redis_thread():
     thread.start()
 
 def process_okex_redis_thread():
-    thread = Thread(target=get_all_records,args=[r1,"get_okex"])
+    thread = Thread(target=get_all_records,args=[r2,"get_okex"])
     thread.daemon = True
     thread.start()
 
 def process_binance_redis_thread():
-    thread = Thread(target=get_all_records,args=[r1,"get_binance"])
+    thread = Thread(target=get_all_records,args=[r3,"get_binance"])
     thread.daemon = True
     thread.start()
 
 def process_medium_redis_thread():
-    thread = Thread(target=get_all_records,args=[r1,"get_medium"])
+    thread = Thread(target=get_all_records,args=[r4,"get_medium"])
     thread.daemon = True
     thread.start()
 
