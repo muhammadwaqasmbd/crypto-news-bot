@@ -163,8 +163,12 @@ def get_records(url,huobi):
         return json_data
     else:
         headers = get_headers()
-        data = requests.get(url, headers=headers,auth=('[username]','[password]'), verify=False).json()
-        return data
+        data = requests.get(url, headers=headers,auth=('[username]','[password]'), verify=False)
+        if (data.status_code == 200):
+            try:
+                return data.json()
+            except ValueError:
+                print(ValueError)
 
 def get_headers():
     headers = {
