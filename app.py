@@ -25,17 +25,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socket_ = SocketIO(app,async_mode=async_mode)
 thread = None
-thread_h_redis = None
-thread_o_redis = None
-thread_b_redis = None
-thread_m_redis = None
-thread_h = None
-thread_o = None
-thread_b = None
-thread_m = None
-thread_redis_get= None
-thread_redis_save= None
-thread_b_a= None
 
 @app.route("/")
 def scrape():
@@ -43,69 +32,27 @@ def scrape():
 
 @socket_.on('start_process', namespace='/start')
 def start_process(message):
-    rt_huobi = RepeatedTimer(1, process_huobi_thread) 
-    rt_okex = RepeatedTimer(1, process_okex_thread)
-    rt_binance = RepeatedTimer(3, process_binance_thread) 
-    rt_medium = RepeatedTimer(60, process_medium_thread) 
-    rt_huobi_redis = RepeatedTimer(1, process_huobi_redis_thread) 
-    rt_okex_redis = RepeatedTimer(1, process_okex_redis_thread)
-    rt_binance_redis = RepeatedTimer(1, process_binance_redis_thread) 
-    rt_medium_redis = RepeatedTimer(1, process_medium_redis_thread)
+    while True:
+        rt_huobi = RepeatedTimer(1, process_huobi_articles) 
+        rt_okex = RepeatedTimer(1, process_okex_articles)
+        rt_binance = RepeatedTimer(3, process_binance_articles) 
+        rt_medium = RepeatedTimer(60, process_medium_articles) 
+        rt_huobi_redis = RepeatedTimer(1, get_all_records,r1,"get_huobi") 
+        rt_okex_redis = RepeatedTimer(1,  get_all_records,r2,"get_okex")
+        rt_binance_redis = RepeatedTimer(1,  get_all_records,r3,"get_binance") 
+        rt_medium_redis = RepeatedTimer(1,  get_all_records,r4,"get_medium")
+        try:
+            time.sleep(300)
+        finally:
+            rt_huobi.stop()
+            rt_okex.stop()
+            rt_binance.stop()
+            rt_medium.stop()
+            rt_huobi_redis.stop()
+            rt_okex_redis.stop()
+            rt_binance_redis.stop()
+            rt_medium_redis.stop()
 
-def process_huobi_redis_thread():
-    thread_h_redis = Thread(target=get_all_records,args=[r1,"get_huobi"])
-    thread_h_redis.daemon = True
-    thread_h_redis.start()
-
-def process_okex_redis_thread():
-    thread_o_redis = Thread(target=get_all_records,args=[r2,"get_okex"])
-    thread_o_redis.daemon = True
-    thread_o_redis.start()
-
-def process_binance_redis_thread():
-    thread_b_redis = Thread(target=get_all_records,args=[r3,"get_binance"])
-    thread_b_redis.daemon = True
-    thread_b_redis.start()
-
-def process_medium_redis_thread():
-    thread_m_redis = Thread(target=get_all_records,args=[r4,"get_medium"])
-    thread_m_redis.daemon = True
-    thread_m_redis.start()
-
-def process_huobi_thread():
-    thread_h = Thread(target=process_huobi_articles)
-    thread_h.daemon = True
-    thread_h.start()
-
-def process_okex_thread():
-    thread_o = Thread(target=process_okex_articles)
-    thread_o.daemon = True
-    thread_o.start()
-
-def process_binance_thread():
-    thread_b = Thread(target=process_binance_articles)
-    thread_b.daemon = True
-    thread_b.start()
-
-def process_binance_article_thread(code,json_data):
-    thread_b_a = Thread(target=process_binance_article,args=[code,json_data])
-    thread_b_a.daemon = True
-    thread_b_a.start()
-
-def process_medium_thread():
-    thread_m = Thread(target=process_medium_articles)
-    thread_m.daemon = True
-    thread_m.start()
-
-def redis_save_thread(r,publish_date,json_data):
-    thread_redis_save = Thread(target=redis_save_date,args=[r,publish_date,json_data])
-    thread_redis_save.daemon = True
-    thread_redis_save.start()
-
-def redis_get_data_thread(r,article_type):
-    thread_redis_get = Thread(target=get_all_records,args=[r,article_type])
-    thread_redis_get.daemon = True
-    thread_redis_get.start()
 
 def process_huobi_articles():
     current_time =  dt.datetime.now()
@@ -114,8 +61,8 @@ def process_huobi_articles():
     for article in articles_data:
         json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
         publish_date = get_datestring_from_integer(article["showTime"])
-        redis_save_thread(r1,publish_date, json_data)
-    #redis_get_data_thread(r1,"get_huobi")
+        redis_save_date(r1,publish_date, json_data)
+    #get_all_records(r1,"get_huobi")
     print("Total Time in seconds huobi :", (current_time- dt.datetime.now()).total_seconds())
 
 def redis_save_date(r,publish_date,json_data):
@@ -129,8 +76,8 @@ def process_okex_articles():
         json_data = json.dumps([{"title":article["title"]},{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
         published_date = article["timestamp"][:-1]
         publish_date = get_formated_datestring(published_date)
-        redis_save_thread(r2,publish_date, json_data)
-    #redis_get_data_thread(r1,"get_okex")
+        redis_save_date(r2,publish_date, json_data)
+    #get_all_records(r1,"get_okex")
     print("Total Time in seconds okex :", (current_time- dt.datetime.now()).total_seconds())
 
 def process_binance_articles():
@@ -139,14 +86,14 @@ def process_binance_articles():
     for article in articles_data:
         json_data = json.dumps([{"title":article["title"]} ,{"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, {"publishDate":article["publishDate"]}],cls=SetEncoder)
         current_time =  dt.datetime.now()
-        process_binance_article_thread(article["code"],json_data)
-        #redis_get_data_thread(r3,"get_binance")
+        process_binance_article(article["code"],json_data)
+        #get_all_records(r3,"get_binance")
         print("Total Time in seconds binance :", (current_time- dt.datetime.now()).total_seconds())
 
 def process_binance_article(code,json_data):
     record_data = get_records("https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode="+code, False)
     publish_date = get_datestring_from_integer(record_data["data"]["publishDate"])
-    redis_save_thread(r3,publish_date, json_data)
+    redis_save_date(r3,publish_date, json_data)
 
 def process_medium_articles():
     current_time =  dt.datetime.now()
@@ -161,8 +108,8 @@ def process_medium_articles():
             time.sleep(2)
             publish_date = get_medium_article(href)
             json_data = json.dumps([{"title":title}, {"time2":dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}],cls=SetEncoder)
-            redis_save_thread(r4,publish_date, json_data)
-    #redis_get_data_thread(r4,"get_medium")
+            redis_save_date(r4,publish_date, json_data)
+    #get_all_records(r4,"get_medium")
     print("Total Time in seconds medium :", (current_time- dt.datetime.now()).total_seconds())
 
 def get_records(url,huobi):
